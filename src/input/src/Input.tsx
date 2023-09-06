@@ -7,17 +7,17 @@ import {
   toRef,
   onMounted,
   getCurrentInstance,
-  PropType,
-  CSSProperties,
+  type PropType,
+  type CSSProperties,
   watch,
   watchEffect,
-  WatchStopHandle,
+  type WatchStopHandle,
   provide,
-  InputHTMLAttributes,
-  TextareaHTMLAttributes,
+  type InputHTMLAttributes,
+  type TextareaHTMLAttributes,
   Fragment,
-  VNode,
-  VNodeChild
+  type VNode,
+  type VNodeChild
 } from 'vue'
 import { useMergedState, useMemo } from 'vooks'
 import { getPadding } from 'seemly'
@@ -32,7 +32,7 @@ import {
   NBaseIcon,
   NBaseSuffix,
   NScrollbar,
-  ScrollbarInst
+  type ScrollbarInst
 } from '../../_internal'
 import {
   useTheme,
@@ -46,12 +46,12 @@ import type { ThemeProps } from '../../_mixins'
 import {
   call,
   createKey,
-  ExtractPublicPropTypes,
+  type ExtractPublicPropTypes,
   resolveSlot,
   resolveWrappedSlot,
-  warnOnce
+  warnOnce,
+  type MaybeArray
 } from '../../_utils'
-import type { MaybeArray } from '../../_utils'
 import { inputLight } from '../styles'
 import type { InputTheme } from '../styles'
 import type {
@@ -127,7 +127,7 @@ export const inputProps = {
   renderCount: Function as PropType<(props: { value: string }) => VNodeChild>,
   onMousedown: Function as PropType<(e: MouseEvent) => void>,
   onKeydown: Function as PropType<(e: KeyboardEvent) => void>,
-  onKeyup: Function as PropType<(e: KeyboardEvent) => void>,
+  onKeyup: [Function, Array] as PropType<(e: KeyboardEvent) => void>,
   onInput: [Function, Array] as PropType<OnUpdateValue>,
   onFocus: [Function, Array] as PropType<MaybeArray<(e: FocusEvent) => void>>,
   onBlur: [Function, Array] as PropType<MaybeArray<(e: FocusEvent) => void>>,
@@ -160,7 +160,10 @@ export const inputProps = {
   >,
   internalDeactivateOnEnter: Boolean,
   internalForceFocus: Boolean,
-  internalLoadingBeforeSuffix: Boolean,
+  internalLoadingBeforeSuffix: {
+    type: Boolean,
+    default: true
+  },
   /** deprecated */
   showPasswordToggle: Boolean
 }
@@ -655,8 +658,11 @@ export default defineComponent({
       }
       on('mouseup', document, hidePassword)
     }
+    function handleWrapperKeyup (e: KeyboardEvent): void {
+      if (props.onKeyup) call(props.onKeyup, e)
+    }
     function handleWrapperKeydown (e: KeyboardEvent): void {
-      props.onKeydown?.(e)
+      if (props.onKeydown) call(props.onKeydown, e)
       switch (e.key) {
         case 'Escape':
           handleWrapperKeydownEsc()
@@ -985,6 +991,7 @@ export default defineComponent({
       handlePasswordToggleClick,
       handlePasswordToggleMousedown,
       handleWrapperKeydown,
+      handleWrapperKeyup,
       handleTextAreaMirrorResize,
       getTextareaScrollContainer: () => {
         return textareaElRef.value
@@ -1050,7 +1057,7 @@ export default defineComponent({
         onMouseleave={this.handleMouseLeave}
         onCompositionstart={this.handleCompositionStart}
         onCompositionend={this.handleCompositionEnd}
-        onKeyup={this.onKeyup}
+        onKeyup={this.handleWrapperKeyup}
         onKeydown={this.handleWrapperKeydown}
       >
         {/* textarea & basic input */}
@@ -1108,7 +1115,9 @@ export default defineComponent({
                           scrollContainerWidthStyle
                         ]}
                         onBlur={this.handleInputBlur}
-                        onFocus={(e) => this.handleInputFocus(e, 2)}
+                        onFocus={(e) => {
+                          this.handleInputFocus(e, 2)
+                        }}
                         onInput={this.handleInput}
                         onChange={this.handleChange}
                         onScroll={this.handleTextAreaScroll}
@@ -1181,9 +1190,15 @@ export default defineComponent({
                 autofocus={this.autofocus}
                 size={this.attrSize}
                 onBlur={this.handleInputBlur}
-                onFocus={(e) => this.handleInputFocus(e, 0)}
-                onInput={(e) => this.handleInput(e, 0)}
-                onChange={(e) => this.handleChange(e, 0)}
+                onFocus={(e) => {
+                  this.handleInputFocus(e, 0)
+                }}
+                onInput={(e) => {
+                  this.handleInput(e, 0)
+                }}
+                onChange={(e) => {
+                  this.handleChange(e, 0)
+                }}
               />
               {this.showPlaceholder1 ? (
                 <div class={`${mergedClsPrefix}-input__placeholder`}>
@@ -1302,9 +1317,15 @@ export default defineComponent({
                 readonly={this.readonly as any}
                 style={this.textDecorationStyle[1] as any}
                 onBlur={this.handleInputBlur}
-                onFocus={(e) => this.handleInputFocus(e, 1)}
-                onInput={(e) => this.handleInput(e, 1)}
-                onChange={(e) => this.handleChange(e, 1)}
+                onFocus={(e) => {
+                  this.handleInputFocus(e, 1)
+                }}
+                onInput={(e) => {
+                  this.handleInput(e, 1)
+                }}
+                onChange={(e) => {
+                  this.handleChange(e, 1)
+                }}
               />
               {this.showPlaceholder2 ? (
                 <div class={`${mergedClsPrefix}-input__placeholder`}>
